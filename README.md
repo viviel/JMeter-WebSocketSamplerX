@@ -1,7 +1,7 @@
 JMeter
 ======
 
-JMeter - WebSocket Sampler
+JMeter - WebSocket Sampler X be based on [WebSocket Sampler](https://github.com/maciejzaleski/JMeter-WebSocketSampler)
 
 Compiled binary can be downloaded from the Releases.
 
