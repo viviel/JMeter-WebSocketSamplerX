@@ -19,8 +19,8 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
 
 import java.io.IOException;
 import java.util.Deque;
-import java.util.LinkedList;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -34,7 +34,7 @@ public class ServiceSocket {
     protected final WebSocketSampler parent;
     protected WebSocketClient client;
     private static final Logger log = LoggingManager.getLoggerForClass();
-    protected Deque<String> responeBacklog;
+    protected Deque<String> responseBacklog;
     protected Integer error = 0;
     protected StringBuffer logMessage = new StringBuffer();
     protected CountDownLatch openLatch = new CountDownLatch(1);
@@ -57,7 +57,7 @@ public class ServiceSocket {
         logMessage.append("\n\n[Execution Flow]\n");
         logMessage.append(" - Opening new connection\n");
         initializePatterns();
-        responeBacklog = new LinkedList<>();
+        responseBacklog = new ConcurrentLinkedDeque<>();
     }
 
     @OnWebSocketMessage
@@ -142,7 +142,7 @@ public class ServiceSocket {
         StringBuilder responseMessage = new StringBuilder();
 
         //Iterate through response messages saved in the responeBacklog cache
-        for (String s : responeBacklog) {
+        for (String s : responseBacklog) {
             responseMessage.append(s);
         }
 
@@ -278,10 +278,10 @@ public class ServiceSocket {
             messageBacklog = WebSocketSampler.MESSAGE_BACKLOG_COUNT;
         }
 
-        while (responeBacklog.size() >= messageBacklog) {
-            responeBacklog.poll();
+        while (responseBacklog.size() >= messageBacklog) {
+            responseBacklog.poll();
         }
-        responeBacklog.add(message);
+        responseBacklog.add(message);
     }
 
 }
