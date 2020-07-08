@@ -19,8 +19,8 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
 
 import java.io.IOException;
 import java.util.Deque;
-import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -34,7 +34,7 @@ public class ServiceSocket {
     protected final WebSocketSampler parent;
     protected WebSocketClient client;
     private static final Logger log = LoggingManager.getLoggerForClass();
-    protected Deque<String> responeBacklog = new LinkedList<String>();
+    protected Deque<String> responeBacklog;
     protected Integer error = 0;
     protected StringBuffer logMessage = new StringBuffer();
     protected CountDownLatch openLatch = new CountDownLatch(1);
@@ -57,6 +57,7 @@ public class ServiceSocket {
         logMessage.append("\n\n[Execution Flow]\n");
         logMessage.append(" - Opening new connection\n");
         initializePatterns();
+        responeBacklog = new LinkedList<>();
     }
 
     @OnWebSocketMessage
@@ -138,15 +139,14 @@ public class ServiceSocket {
      * @return response message made of messages saved in the responeBacklog cache
      */
     public String getResponseMessage() {
-        String responseMessage = "";
+        StringBuilder responseMessage = new StringBuilder();
 
         //Iterate through response messages saved in the responeBacklog cache
-        Iterator<String> iterator = responeBacklog.iterator();
-        while (iterator.hasNext()) {
-            responseMessage += iterator.next();
+        for (String s : responeBacklog) {
+            responseMessage.append(s);
         }
 
-        return responseMessage;
+        return responseMessage.toString();
     }
 
     public boolean awaitClose(int duration, TimeUnit unit) throws InterruptedException {
@@ -233,7 +233,8 @@ public class ServiceSocket {
     protected void initializePatterns() {
         try {
             logMessage.append(" - Using response message pattern \"").append(responsePattern).append("\"\n");
-            responseExpression = (responsePattern != null || !responsePattern.isEmpty()) ? Pattern.compile(responsePattern) : null;
+            Objects.requireNonNull(responsePattern);
+            responseExpression = Pattern.compile(responsePattern);
         } catch (Exception ex) {
             logMessage.append(" - Invalid response message regular expression pattern: ").append(ex.getLocalizedMessage()).append("\n");
             log.error("Invalid response message regular expression pattern: " + ex.getLocalizedMessage());
@@ -242,7 +243,8 @@ public class ServiceSocket {
 
         try {
             logMessage.append(" - Using disconnect pattern \"").append(disconnectPattern).append("\"\n");
-            disconnectExpression = (disconnectPattern != null || !disconnectPattern.isEmpty()) ? Pattern.compile(disconnectPattern) : null;
+            Objects.requireNonNull(disconnectPattern);
+            disconnectExpression = Pattern.compile(disconnectPattern);
         } catch (Exception ex) {
             logMessage.append(" - Invalid disconnect regular expression pattern: ").append(ex.getLocalizedMessage()).append("\n");
             log.error("Invalid disconnect regular regular expression pattern: " + ex.getLocalizedMessage());
